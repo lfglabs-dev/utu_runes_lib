@@ -1,6 +1,7 @@
-pub mod runes_lib {
-    pub mod parser;
-}
+pub mod parser;
+
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    mod parser;
+}
