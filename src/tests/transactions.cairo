@@ -1,41 +1,7 @@
 use runes_lib::parser::{extract_runestone};
 use runes_lib::types::{Runestone, RuneId, Artifact};
 use consensus::types::transaction::{Transaction, TxOut};
-
-fn hex_char_to_nibble(hex_char: u8) -> u8 {
-    if hex_char >= 48 && hex_char <= 57 {
-        // 0-9
-        hex_char - 48
-    } else if hex_char >= 65 && hex_char <= 70 {
-        // A-F
-        hex_char - 55
-    } else if hex_char >= 97 && hex_char <= 102 {
-        // a-f
-        hex_char - 87
-    } else {
-        panic!("Invalid hex character: {hex_char}");
-        0
-    }
-}
-
-
-/// Gets bytes from hex (base16).
-fn from_hex(hex_string: ByteArray) -> ByteArray {
-    let num_characters = hex_string.len();
-    assert!(num_characters & 1 == 0, "Invalid hex string length");
-
-    let mut bytes: ByteArray = Default::default();
-    let mut i = 0;
-
-    while i != num_characters {
-        let hi = hex_char_to_nibble(hex_string[i]);
-        let lo = hex_char_to_nibble(hex_string[i + 1]);
-        bytes.append_byte(hi * 16 + lo);
-        i += 2;
-    };
-
-    bytes
-}
+use utils::hex::from_hex;
 
 #[test]
 fn test_tx_mint_1() {
