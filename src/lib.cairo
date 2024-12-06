@@ -14,7 +14,6 @@ pub mod utils {
     pub mod char;
 }
 
-
 #[cfg(test)]
 mod tests {
     mod parser;
@@ -23,4 +22,5 @@ mod tests {
     mod utils;
     mod varint;
     mod flag;
+    mod transactions;
 }

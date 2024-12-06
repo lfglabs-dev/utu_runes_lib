@@ -21,14 +21,6 @@ pub fn store_field_key(ref fields_keys: Array<u128>, key: u128) {
     }
 }
 
-// fn get_array_entry(ref dict: Felt252Dict<Nullable<Array<u128>>>, index: felt252) -> Span<u128> {
-//     let (entry, _arr) = dict.entry(index);
-//     let mut arr = _arr.deref_or(array![]);
-//     let span = arr.span();
-//     dict = entry.finalize(NullableTrait::new(arr));
-//     span
-// }
-
 pub fn append_value(ref dict: Felt252Dict<Nullable<Array<u128>>>, index: felt252, value: u128) {
     let (entry, arr) = dict.entry(index);
     let mut unboxed_val = arr.deref_or(array![]);

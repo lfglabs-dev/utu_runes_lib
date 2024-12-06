@@ -57,6 +57,7 @@ pub fn extract_runestone(tx: Transaction) -> Option<Artifact> {
                             break;
                         },
                     };
+
                     // parse message
                     let (edicts, fields, flaws, fields_keys) = parse_message(tx, decoded);
 

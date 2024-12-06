@@ -2,7 +2,7 @@ use alexandria_math::pow;
 use alexandria_data_structures::byte_array_ext::ByteArrayIntoArrayU8;
 
 pub fn decode_integers(payload: ByteArray) -> Result<Array<u128>, ByteArray> {
-    let payload : Array<u8> = payload.into();
+    let payload: Array<u8> = payload.into();
     let mut integers: Array<u128> = ArrayTrait::new();
     let mut i = 0;
     let mut err: ByteArray = Default::default();
