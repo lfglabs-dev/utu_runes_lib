@@ -152,3 +152,62 @@ fn test_tx_etching() {
     }
 }
 
+#[test]
+fn test_tx_send() {
+    // 5092608e9d4af51641b905630debefe4c211289626436140b8467ad857f1da8e
+    let outputs: Array<TxOut> = array![
+        TxOut {
+            value: 1071,
+            pk_script: @from_hex(
+                "512079a2aa2c82cd13dadc5e3c38338406b291a2c26c39feb5a65f08e498535c4109",
+            ),
+            cached: false
+        },
+         TxOut {
+            value: 0,
+            pk_script: @from_hex(
+                "6a5d0714c0a23314b802",
+            ),
+            cached: false
+        },
+    ];
+
+    let tx = Transaction {
+        version: 0, inputs: array![].span(), outputs: outputs.into(), lock_time: 0, is_segwit: false
+    };
+
+    let values = extract_runestone(tx);
+    match values {
+        Option::None => { println!("Should not return None"); },
+        Option::Some(output) => {
+            println!("output: {:?}", output);
+            // match output {
+            //     Artifact::Runestone(runestone) => {
+            //         let etching = runestone.etching.unwrap();
+            //         let terms = etching.terms.unwrap();
+            //         assert(etching.premine == Option::Some(111000), 'wrong etching value');
+            //         assert(etching.divisibility == Option::Some(0), 'wrong pointer value');
+            //         assert(
+            //             etching.rune == Option::Some(1778522209552757531985435),
+            //             'wrong etching value'
+            //         );
+            //         assert(etching.spacers == Option::Some(8456), 'wrong etching value');
+            //         assert(terms.amount == Option::Some(1000), 'wrong terms value');
+            //         assert(terms.cap == Option::Some(21889), 'wrong terms value');
+            //         assert(
+            //             terms.height == (Option::None(()), Option::None(())), 'wrong terms value'
+            //         );
+            //         assert(
+            //             terms.offset == (Option::None(()), Option::None(())), 'wrong terms value'
+            //         );
+            //         assert(etching.turbo == true, 'wrong etching value');
+            //         assert(runestone.pointer == Option::Some(1), 'wrong pointer value');
+            //         assert(runestone.mint.is_none(), 'wrong mint value');
+            //         assert(runestone.edicts.len() == 0, 'wrong edicts value');
+            //     },
+            //     _ => { panic!("Expected Runestone"); }
+            // }
+        }
+    }
+}
+

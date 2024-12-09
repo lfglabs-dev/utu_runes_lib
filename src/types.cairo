@@ -14,7 +14,7 @@ pub struct Edict {
     pub output: u32,
 }
 
-#[derive(Copy, Drop, PartialEq, Default, Debug)]
+#[derive(Copy, Drop, PartialEq, Default, Debug, Serde)]
 pub struct Terms {
     pub amount: Option<u128>,
     pub cap: Option<u128>,
@@ -22,7 +22,7 @@ pub struct Terms {
     pub offset: (Option<u64>, Option<u64>),
 }
 
-#[derive(Drop, PartialEq, Default, Debug)]
+#[derive(Drop, PartialEq, Default, Debug, Serde)]
 pub struct Etching {
     pub divisibility: Option<u8>,
     pub premine: Option<u128>,
