@@ -21,7 +21,7 @@ pub fn transaction(mut op_return_scripts: Span<ByteArray>) -> Transaction {
         }
     };
     Transaction {
-        version: 0, inputs: array![].span(), outputs: outputs.span(), lock_time: 0, is_segwit: false
+        version: 2, inputs: array![].span(), outputs: outputs.span(), lock_time: 0, is_segwit: false
     }
 }
 

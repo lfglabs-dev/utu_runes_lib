@@ -1,7 +1,9 @@
+use alexandria_data_structures::{span_ext::SpanTraitExt, byte_array_ext::ByteArrayIntoArrayU8};
 use core::num::traits::Zero;
-use consensus::{types::transaction::{Transaction}};
 use core::traits::Into;
 use core::dict::Felt252Dict;
+use consensus::types::transaction::Transaction;
+use utils::bytearray::ByteArraySnapSerde;
 
 use runes_lib::runestone::{tag::{Tag, TagTrait}, message::extract_etching};
 use runes_lib::utils::{
@@ -24,7 +26,7 @@ pub fn extract_runestone(tx: Transaction) -> Option<Artifact> {
                 }
                 if pubscript[0] == OP_RETURN && pubscript[1] == OP_13 {
                     // load payload
-                    let payload = match load_payload(pubscript.clone(), 2) {
+                    let payload = match load_payload(pubscript.clone()) {
                         Option::Some(payload) => {
                             match payload {
                                 Payload::Valid(p) => p,
@@ -59,7 +61,7 @@ pub fn extract_runestone(tx: Transaction) -> Option<Artifact> {
                     };
 
                     // parse message
-                    let (edicts, fields, flaws, fields_keys) = parse_message(tx, decoded);
+                    let (edicts, fields, flaws, fields_keys) = parse_message(tx, decoded.span());
 
                     // get runestone
                     runestone_output = get_runestone(tx, edicts, fields, fields_keys, flaws);
@@ -73,131 +75,129 @@ pub fn extract_runestone(tx: Transaction) -> Option<Artifact> {
 }
 
 // would load bitcoin script instructions to add element in stack and panic on other instruction
-pub fn load_payload(pubscript: ByteArray, mut index: usize) -> Option<Payload> {
+pub fn load_payload(pubscript: ByteArray) -> Option<Payload> {
     let mut output: ByteArray = Default::default();
-    let mut current_index: u32 = index;
     let mut flaw: ByteArray = Default::default();
+    let pubscript_arr: Array<u8> = pubscript.into();
+    let mut pubscript_span: Span<u8> = pubscript_arr.span();
+    pubscript_span.remove_front_n(2);
 
     loop {
-        if current_index >= pubscript.len() {
-            break;
-        }
+        match pubscript_span.pop_front() {
+            Option::Some(opcode) => {
+                let opcode: u8 = *opcode;
 
-        let opcode: u8 = pubscript[current_index];
-        current_index += 1;
-
-        if opcode == 0 {
-            continue;
-        }
-
-        // Handle direct size (1-75 bytes)
-        if opcode > 0 && opcode <= 0x4b {
-            let size: u32 = opcode.into();
-
-            if current_index + size > pubscript.len() {
-                flaw = "invalid script in OP_RETURN";
-                break;
-            }
-
-            let mut i: usize = 0;
-            loop {
-                if i >= size {
-                    break;
+                if opcode == 0 {
+                    continue;
                 }
-                output.append_byte(pubscript[current_index + i]);
-                i += 1;
-            };
-            current_index += size;
-            continue;
-        }
 
-        // Handle OP_PUSHDATA1 (76-255 bytes)
-        if opcode == 0x4c {
-            let size: u32 = pubscript[current_index].into();
-
-            if current_index + size > pubscript.len() {
-                flaw = "invalid script in OP_RETURN";
-                break;
-            }
-
-            current_index += 1;
-            let mut i = 0;
-            loop {
-                if i >= size {
-                    break;
+                // Handle direct size (1-75 bytes)
+                if opcode > 0 && opcode <= 0x4b {
+                    let size: u32 = opcode.into();
+                    let mut i: usize = 0;
+                    loop {
+                        if i >= size {
+                            break;
+                        }
+                        match pubscript_span.pop_front() {
+                            Option::Some(data) => { output.append_byte(*data); },
+                            Option::None => {
+                                flaw = "invalid script in OP_RETURN";
+                                break;
+                            },
+                        };
+                        i += 1;
+                    };
+                    continue;
                 }
-                output.append_byte(pubscript[current_index + i]);
-                i += 1;
-            };
-            current_index += size;
-            continue;
-        }
 
-        // Handle OP_PUSHDATA2 (256-65535 bytes)
-        if opcode == 0x4d {
-            if current_index + 2 > pubscript.len() {
-                flaw = "Not enough data for OP_PUSHDATA2 size field";
-                break;
-            }
-
-            // * 256 is << 8z
-            let size: u32 = ((pubscript[current_index]).into()
-                // so it doesn't exceed the max value
-                | ((pubscript[current_index + 1]).into() * 256)
-                & 0xFF00);
-
-            if current_index + size > pubscript.len() {
-                flaw = "Not enough data for OP_PUSHDATA2 size field";
-                break;
-            }
-
-            current_index += 2;
-            let mut i: usize = 0;
-            loop {
-                if i >= size {
-                    break;
+                // Handle OP_PUSHDATA1 (76-255 bytes)
+                if opcode == 0x4c {
+                    let size: u32 = match pubscript_span.pop_front() {
+                        Option::Some(data) => (*data).into(),
+                        Option::None => {
+                            flaw = "invalid script in OP_RETURN";
+                            break;
+                        },
+                    };
+                    let mut i: usize = 0;
+                    loop {
+                        if i >= size {
+                            break;
+                        }
+                        match pubscript_span.pop_front() {
+                            Option::Some(data) => { output.append_byte(*data); },
+                            Option::None => {
+                                flaw = "invalid script in OP_RETURN";
+                                break;
+                            },
+                        };
+                        i += 1;
+                    };
+                    continue;
                 }
-                output.append_byte(pubscript[current_index + i]);
-                i += 1;
-            };
-            current_index += size;
-            continue;
-        }
 
-        // Handle OP_PUSHDATA4 (256-65535 bytes)
-        if opcode == 0x4e {
-            if current_index + 4 > pubscript.len() {
-                flaw = "Not enough data for OP_PUSHDATA4 size field";
-                break;
-            }
+                // Handle OP_PUSHDATA2 (256-65535 bytes)
+                if opcode == 0x4d {
+                    let size_arr = pubscript_span.pop_front_n(2);
+                    if size_arr.len() < 2 {
+                        flaw = "Not enough data for OP_PUSHDATA2 size field";
+                        break;
+                    }
+                    let size: u32 = ((*size_arr[0]).into() // so it doesn't exceed the max value
+                        | ((*size_arr[1]).into() * 256_u32)
+                        & 0xFF00);
 
-            // * 256 is << 8z
-            let size: u32 = ((pubscript[current_index]).into()
-                // so it doesn't exceed the max value
-                | ((pubscript[current_index + 1]).into() * 256)
-                & 0xFF00);
-
-            if current_index + size > pubscript.len() {
-                flaw = "Not enough data for OP_PUSHDATA4 size field";
-                break;
-            }
-
-            current_index += 4;
-            // Copy the next 'size' bytes to output
-            let mut i: usize = 0;
-            loop {
-                if i >= size {
-                    break;
+                    let mut i: usize = 0;
+                    loop {
+                        if i >= size {
+                            break;
+                        }
+                        match pubscript_span.pop_front() {
+                            Option::Some(data) => { output.append_byte(*data); },
+                            Option::None => {
+                                flaw = "Not enough data for OP_PUSHDATA2 size field";
+                                break;
+                            },
+                        };
+                        i += 1;
+                    };
+                    continue;
                 }
-                output.append_byte(pubscript[current_index + i]);
-                i += 1;
-            };
-            current_index += size;
-            continue;
-        }
 
-        flaw = "non-pushdata opcode in OP_RETURN";
-        break;
+                // Handle OP_PUSHDATA4 (256-65535 bytes)
+                if opcode == 0x4e {
+                    let size_arr = pubscript_span.pop_front_n(4);
+                    if size_arr.len() < 2 {
+                        flaw = "Not enough data for OP_PUSHDATA4 size field";
+                        break;
+                    }
+                    let size: u32 = ((*size_arr[0]).into() // so it doesn't exceed the max value
+                        | ((*size_arr[1]).into() * 256_u32)
+                        & 0xFF00);
+
+                    let mut i: usize = 0;
+                    loop {
+                        if i >= size {
+                            break;
+                        }
+                        match pubscript_span.pop_front() {
+                            Option::Some(data) => { output.append_byte(*data); },
+                            Option::None => {
+                                flaw = "Not enough data for OP_PUSHDATA4 size field";
+                                break;
+                            },
+                        };
+                        i += 1;
+                    };
+                    continue;
+                }
+
+                flaw = "non-pushdata opcode in OP_RETURN";
+                break;
+            },
+            Option::None => { break; },
+        }
     };
 
     if flaw.len() > 0 {
@@ -213,7 +213,9 @@ fn build_edict(tx: Transaction, id: RuneId, amount: u128, output: u128) -> Optio
         Option::Some(o) => o,
     };
 
-    if output > tx.outputs.len() {
+    let output_len: u32 = tx.outputs.len().try_into()?;
+
+    if output > output_len {
         return Option::None;
     }
 
@@ -221,91 +223,84 @@ fn build_edict(tx: Transaction, id: RuneId, amount: u128, output: u128) -> Optio
 }
 
 pub fn parse_message(
-    tx: Transaction, payload: Array<u128>
+    tx: Transaction, mut payload: Span<u128>
 ) -> (Array<Edict>, Felt252Dict<Nullable<Array<u128>>>, Option<ByteArray>, Array<u128>) {
     let mut edicts: Array<Edict> = ArrayTrait::new();
     let mut fields: Felt252Dict<Nullable<Array<u128>>> = Default::default();
     let mut fields_keys: Array<u128> = ArrayTrait::new();
     let mut flaw: ByteArray = Default::default();
 
-    let mut i = 0;
-
     loop {
-        if i >= payload.len() {
-            break;
-        }
+        match payload.pop_front() {
+            Option::Some(tag) => {
+                if *tag == Tag::Body.get() {
+                    let mut id: RuneId = Default::default();
 
-        let tag: u128 = *payload[i];
+                    loop {
+                        if payload.len() == 0 {
+                            break;
+                        }
 
-        if tag == Tag::Body.get() {
-            let mut id: RuneId = Default::default();
+                        // Build chunks
+                        let mut chunk: Array<u128> = ArrayTrait::new();
 
-            let mut j = i + 1;
-
-            loop {
-                if j >= payload.len() {
-                    break;
-                }
-
-                let mut chunk: Array<u128> = ArrayTrait::new();
-                let mut k = 0;
-                // Collect up to 4 elements into `chunk`
-                loop {
-                    if k >= 4 || j + k >= payload.len() {
-                        break;
-                    }
-                    chunk.append(*payload[j + k]);
-                    k += 1;
-                };
-
-                if chunk.len() != 4 {
-                    flaw = "trailing integers in body";
-                    break;
-                }
-
-                // Process chunk
-                let next = id.next(*chunk[0], *chunk[1]);
-                match next {
-                    Option::Some(next_id) => {
-                        match build_edict(tx, next_id, *chunk[2], *chunk[3]) {
-                            Option::None => {
-                                flaw = "edict output greater than transaction output count";
+                        loop {
+                            if chunk.len() == 4 {
                                 break;
-                            },
-                            Option::Some(edict) => {
-                                id = next_id;
-                                edicts.append(edict);
-                            },
-                        };
-                    },
-                    Option::None => {
-                        flaw = "invalid rune ID in edict";
-                        break;
-                    }
-                }
-                j += 4;
-            };
-            break;
-        } else {
-            // value
-            match payload.get(i + 1) {
-                Option::None => {
-                    flaw = "field with missing value";
-                    break;
-                },
-                Option::Some(v) => {
-                    append_value(ref fields, tag.into(), *v.deref());
-                    store_field_key(ref fields_keys, tag);
-                },
-            };
-        }
+                            }
 
-        i += 2;
+                            match payload.pop_front() {
+                                Option::Some(data) => { chunk.append(*data); },
+                                Option::None => { break; },
+                            }
+                        };
+
+                        if chunk.len() != 4 {
+                            flaw = "trailing integers in body";
+                            break;
+                        }
+
+                        // Process chunk
+                        let next = id.next(*chunk[0], *chunk[1]);
+                        match next {
+                            Option::Some(next_id) => {
+                                match build_edict(tx, next_id, *chunk[2], *chunk[3]) {
+                                    Option::Some(edict) => {
+                                        id = next_id;
+                                        edicts.append(edict);
+                                    },
+                                    Option::None => {
+                                        flaw = "edict output greater than transaction output count";
+                                        break;
+                                    },
+                                };
+                            },
+                            Option::None => {
+                                flaw = "invalid rune ID in edict";
+                                break;
+                            }
+                        }
+                    };
+                } else {
+                    // value
+                    match payload.pop_front() {
+                        Option::Some(v) => {
+                            append_value(ref fields, (*tag).into(), v.deref());
+                            store_field_key(ref fields_keys, *tag);
+                        },
+                        Option::None => {
+                            flaw = "field with missing value";
+                            break;
+                        },
+                    };
+                }
+            },
+            Option::None => { break; },
+        };
     };
 
     (edicts, fields, Option::Some(flaw), fields_keys)
 }
-
 
 pub fn get_runestone(
     tx: Transaction,
