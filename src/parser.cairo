@@ -12,7 +12,6 @@ use runes_lib::utils::{
 use runes_lib::types::{Edict, RuneId, Runestone, Artifact, Cenotaph, Payload, Rune};
 use runes_lib::constants::{OP_RETURN, OP_13};
 
-
 pub fn extract_runestone(tx: Transaction) -> Option<Artifact> {
     let mut outputs = tx.outputs;
     let mut runestone_output = Option::None;
