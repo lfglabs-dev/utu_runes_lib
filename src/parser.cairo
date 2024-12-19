@@ -95,7 +95,7 @@ pub fn load_payload(pubscript: ByteArray) -> Option<Payload> {
                     let size: u32 = opcode.into();
                     let mut i: usize = 0;
                     loop {
-                        if i >= size {
+                        if i == size {
                             break;
                         }
                         match pubscript_span.pop_front() {
@@ -121,7 +121,7 @@ pub fn load_payload(pubscript: ByteArray) -> Option<Payload> {
                     };
                     let mut i: usize = 0;
                     loop {
-                        if i >= size {
+                        if i == size {
                             break;
                         }
                         match pubscript_span.pop_front() {
@@ -149,7 +149,7 @@ pub fn load_payload(pubscript: ByteArray) -> Option<Payload> {
 
                     let mut i: usize = 0;
                     loop {
-                        if i >= size {
+                        if i == size {
                             break;
                         }
                         match pubscript_span.pop_front() {
@@ -177,7 +177,7 @@ pub fn load_payload(pubscript: ByteArray) -> Option<Payload> {
 
                     let mut i: usize = 0;
                     loop {
-                        if i >= size {
+                        if i == size {
                             break;
                         }
                         match pubscript_span.pop_front() {
