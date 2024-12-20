@@ -10,6 +10,8 @@ starknet = "2.8.5"
 openzeppelin = "0.18.0"
 utils = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "02a13045b7074ae2b3247431cd91f1ad76263fb2" }
 consensus = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "02a13045b7074ae2b3247431cd91f1ad76263fb2" }
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+alexandria_data_structures = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.31.0" }
