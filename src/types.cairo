@@ -1,7 +1,7 @@
 use core::num::traits::CheckedSub;
 use core::num::traits::CheckedAdd;
 
-#[derive(Copy, Drop, Default, PartialEq, Debug)]
+#[derive(Copy, Drop, Default, PartialEq, Debug, Hash, Serde)]
 pub struct RuneId {
     pub block: u64,
     pub tx: u32,
