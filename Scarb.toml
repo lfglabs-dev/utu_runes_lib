@@ -6,16 +6,15 @@ edition = "2024_07"
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
 [dependencies]
-starknet = "2.9.2"
-openzeppelin = "0.20.0"
-utils = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "dc3d54e84118630efa5e7069eb5c414fd8fbae3f" }
-consensus = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "dc3d54e84118630efa5e7069eb5c414fd8fbae3f" }
-alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "162bed1c636d31ccaaa90ed3eb32c9eb1d5e3bd3" }
-alexandria_data_structures = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "162bed1c636d31ccaaa90ed3eb32c9eb1d5e3bd3" }
+starknet = "2.12.0"
+utils = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "fa3106c944d673c03a866cfb31778895f6f4309b" }
+consensus = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "fa3106c944d673c03a866cfb31778895f6f4309b" }
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "d45439ca26fe890f636c9b06492d075add3fcb29" }
+alexandria_data_structures = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "d45439ca26fe890f636c9b06492d075add3fcb29" }
 
 [dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.34.0" }
-assert_macros = "2.9.2"
+snforge_std = "0.49.0"
+assert_macros = "2.12.0"
 
 [scripts]
 test = "snforge test"
@@ -23,3 +22,4 @@ test = "snforge test"
 [lib]
 sierra = true
 casm = false
+
